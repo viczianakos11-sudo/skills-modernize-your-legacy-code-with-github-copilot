@@ -18,3 +18,58 @@ This program provides a small, menu-driven account balance manager. It supports 
 - Balances and amounts use `PIC 9(6)V99`: up to six integer digits and two decimal digits, with an implied decimal point.
 - There is no student-specific logic or per-student balance. The balance is held in COBOL working storage rather than a persistent database or file.
 - The program does not explicitly validate that an entered amount is positive or handle input-format errors; those behaviors are not defined as business rules here.
+
+## Application data flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Main as MainProgram
+    participant Ops as Operations
+    participant Data as DataProgram
+
+    actor User
+    participant Main as MainProgram
+    participant Ops as Operations
+    participant Data as DataProgram
+
+    loop Until the user exits
+        Main->>User: Display menu and prompt
+        User->>Main: Enter menu choice
+        alt Choice 1: View balance
+            Main->>Ops: CALL Operations(TOTAL)
+            Ops->>Data: CALL DataProgram(READ, balance)
+            Data-->>Ops: Return stored balance
+            Ops-->>User: Display current balance
+        else Choice 2: Credit account
+            Main->>Ops: CALL Operations(CREDIT)
+            Ops->>User: Prompt for credit amount
+            User-->>Ops: Enter amount
+            Ops->>Data: CALL DataProgram(READ, balance)
+            Data-->>Ops: Return stored balance
+            Ops->>Ops: Add amount to balance
+            Ops->>Data: CALL DataProgram(WRITE, balance)
+            Data->>Data: Replace stored balance
+            Ops-->>User: Display new balance
+        else Choice 3: Debit account
+            Main->>Ops: CALL Operations(DEBIT)
+            Ops->>User: Prompt for debit amount
+            User-->>Ops: Enter amount
+            Ops->>Data: CALL DataProgram(READ, balance)
+            Data-->>Ops: Return stored balance
+            alt Balance covers debit
+                Ops->>Ops: Subtract amount from balance
+                Ops->>Data: CALL DataProgram(WRITE, balance)
+                Data->>Data: Replace stored balance
+                Ops-->>User: Display new balance
+            else Insufficient funds
+                Ops-->>User: Display insufficient-funds message
+            end
+        else Choice 4: Exit
+            Main->>Main: Set continue flag to NO
+            Main-->>User: Display exit message
+        else Invalid choice
+            Main-->>User: Display invalid-choice message
+        end
+    end
+```
